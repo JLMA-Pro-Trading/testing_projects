@@ -1,1 +1,29 @@
-{}
+{
+  "trading": {
+    "symbol": "BTCUSDT",
+    "interval": "1m",
+    "strategy": "neural",
+    "parameters": {
+      "rsi_oversold": 25,
+      "rsi_overbought": 75,
+      "signal_threshold": 0.3
+    }
+  },
+  "prediction": {
+    "enabled": true,
+    "horizon": 5,
+    "input_size": 20,
+    "model_type": "nhits"
+  },
+  "backtesting": {
+    "initial_capital": 10000,
+    "commission": 0.0004,
+    "slippage": 0.0001
+  },
+  "risk": {
+    "stop_loss_pct": 0.005,
+    "take_profit_pct": 0.008,
+    "max_position_size": 0.95,
+    "max_drawdown": 0.10
+  }
+}
