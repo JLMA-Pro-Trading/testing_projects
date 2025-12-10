@@ -1,0 +1,87 @@
+{
+  "name": "@neural-trader/predictor",
+  "version": "0.1.0",
+  "description": "Conformal prediction for neural trading with guaranteed intervals",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./wasm": {
+      "import": "./dist/wasm/index.mjs",
+      "require": "./dist/wasm/index.js",
+      "types": "./dist/wasm/index.d.ts"
+    },
+    "./native": {
+      "import": "./dist/native/index.mjs",
+      "require": "./dist/native/index.js",
+      "types": "./dist/native/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "build:wasm": "cd ../../neural-trader-predictor && wasm-pack build --target bundler --out-dir ../packages/predictor/wasm-pkg",
+    "build:native": "napi build --platform --release",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "bench": "vitest bench",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "tslib": "^2.6.2"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^2.18.0",
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "@vitest/ui": "^1.0.0",
+    "esbuild": "^0.19.0",
+    "eslint": "^8.55.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  },
+  "optionalDependencies": {
+    "@neural-trader/predictor-native": "0.1.0"
+  },
+  "peerDependencies": {
+    "@neural-trader/neural": "^1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@neural-trader/neural": {
+      "optional": true
+    }
+  },
+  "files": [
+    "dist",
+    "wasm-pkg",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "conformal-prediction",
+    "trading",
+    "finance",
+    "machine-learning",
+    "wasm",
+    "rust",
+    "prediction-intervals",
+    "quantitative-finance"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ruvnet/neural-trader",
+    "directory": "packages/predictor"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

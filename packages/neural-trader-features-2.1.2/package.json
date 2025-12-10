@@ -1,0 +1,87 @@
+{
+  "name": "@neural-trader/features",
+  "version": "2.1.2",
+  "description": "Technical indicators for Neural Trader - SMA, RSI, MACD, Bollinger Bands, and 150+ indicators",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "files": [
+    "index.js",
+    "load-binary.js",
+    "index.d.ts",
+    "*.node",
+    "README.md",
+    "native"
+  ],
+  "scripts": {
+    "build": "napi build --platform --release --cargo-cwd ../../crates/napi-bindings --cargo-name nt-napi-bindings",
+    "build:all": "napi build --platform --release --target x86_64-unknown-linux-gnu --target x86_64-apple-darwin --target aarch64-apple-darwin --target x86_64-pc-windows-msvc --cargo-cwd ../../crates/napi-bindings --cargo-name nt-napi-bindings",
+    "clean": "rm -f *.node",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "keywords": [
+    "neural-trader",
+    "trading",
+    "algorithmic-trading",
+    "ai",
+    "rust",
+    "napi",
+    "high-performance",
+    "typescript",
+    "claude-code",
+    "mcp",
+    "self-learning",
+    "technical-indicators",
+    "rsi",
+    "macd",
+    "bollinger-bands",
+    "150-indicators"
+  ],
+  "author": "Neural Trader Team",
+  "license": "MIT OR Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ruvnet/neural-trader.git",
+    "directory": "neural-trader-rust/packages/features"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "detect-libc": "^2.0.2"
+  },
+  "peerDependencies": {
+    "@neural-trader/core": "^1.0.0"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^2.18.0",
+    "@types/jest": "^29.5.0",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.0.0"
+  },
+  "napi": {
+    "name": "neural-trader",
+    "triples": {
+      "defaults": true,
+      "additional": [
+        "x86_64-unknown-linux-gnu",
+        "x86_64-unknown-linux-musl",
+        "aarch64-unknown-linux-gnu",
+        "x86_64-apple-darwin",
+        "aarch64-apple-darwin",
+        "x86_64-pc-windows-msvc"
+      ]
+    }
+  },
+  "optionalDependencies": {
+    "@neural-trader/features-linux-x64-gnu": "1.0.0",
+    "@neural-trader/features-linux-x64-musl": "1.0.0",
+    "@neural-trader/features-linux-arm64-gnu": "1.0.0",
+    "@neural-trader/features-darwin-x64": "1.0.0",
+    "@neural-trader/features-darwin-arm64": "1.0.0",
+    "@neural-trader/features-win32-x64-msvc": "1.0.0"
+  },
+  "homepage": "https://neural-trader.ruv.io"
+}

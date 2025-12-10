@@ -1,0 +1,39 @@
+{
+  "name": "@neural-trader/strategies",
+  "version": "2.6.0",
+  "description": "Neural Trader strategy management and backtesting functionality",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "keywords": [
+    "trading",
+    "strategies",
+    "backtesting",
+    "algorithmic-trading",
+    "neural-trader"
+  ],
+  "author": "Neural Trader Team",
+  "license": "MIT OR Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ruvnet/neural-trader.git",
+    "directory": "packages/strategies"
+  },
+  "bugs": {
+    "url": "https://github.com/ruvnet/neural-trader/issues"
+  },
+  "homepage": "https://github.com/ruvnet/neural-trader#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "neural-trader": "^2.6.0"
+  },
+  "peerDependencies": {
+    "neural-trader": "^2.6.0"
+  },
+  "files": [
+    "src/",
+    "README.md",
+    "LICENSE"
+  ]
+}

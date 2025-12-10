@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neural Trader - Backtesting Chart</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #131722;
+      color: #d1d4dc;
+      min-height: 100vh;
+    }
+    .header {
+      background: #1e222d;
+      padding: 15px 20px;
+      border-bottom: 1px solid #2a2e39;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .header h1 { font-size: 18px; color: #fff; }
+    .stats { display: flex; gap: 20px; font-size: 13px; flex-wrap: wrap; }
+    .stat { display: flex; flex-direction: column; align-items: center; }
+    .stat-label { color: #787b86; font-size: 11px; }
+    .stat-value { font-weight: 600; }
+    .stat-value.positive { color: #26a69a; }
+    .stat-value.negative { color: #ef5350; }
+    #main-chart { width: 100%; height: calc(100vh - 280px); min-height: 400px; }
+    #rsi-chart { width: 100%; height: 150px; border-top: 1px solid #2a2e39; }
+    .legend {
+      background: #1e222d;
+      padding: 10px 20px;
+      display: flex;
+      gap: 20px;
+      font-size: 12px;
+      border-top: 1px solid #2a2e39;
+      flex-wrap: wrap;
+    }
+    .legend-item { display: flex; align-items: center; gap: 8px; }
+    .legend-color { width: 12px; height: 12px; border-radius: 2px; }
+    .legend-color.buy { background: #26a69a; }
+    .legend-color.sell { background: #ef5350; }
+    .legend-color.bb { background: transparent; border: 1px dashed #2962ff; }
+    .indicators-panel {
+      background: #1e222d;
+      padding: 10px 20px;
+      border-top: 1px solid #2a2e39;
+      display: flex;
+      gap: 20px;
+      font-size: 12px;
+      flex-wrap: wrap;
+    }
+    .indicator-value { display: flex; gap: 5px; }
+    .indicator-label { color: #787b86; }
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-size: 18px;
+      text-align: center;
+      padding: 20px;
+    }
+    .rsi-label {
+      background: #1e222d;
+      padding: 5px 10px;
+      font-size: 11px;
+      color: #787b86;
+      border-top: 1px solid #2a2e39;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="loading">Cargando datos del backtesting...</div>
+  </div>
+
+  <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
+  <script>
+    async function loadData() {
+      try {
+        let response;
+        const paths = ['./chart-data.json', '/chart-data.json'];
+
+        for (const p of paths) {
+          try {
+            response = await fetch(p);
+            if (response.ok) break;
+          } catch (e) { continue; }
+        }
+
+        if (!response || !response.ok) throw new Error('No se pudo cargar chart-data.json');
+
+        const data = await response.json();
+        renderChart(data);
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('app').innerHTML = `
+          <div class="loading">
+            <div>
+              <p>Error: ${error.message}</p>
+              <p style="font-size: 14px; color: #787b86; margin-top: 10px;">
+                Ejecuta: <code style="background: #2a2e39; padding: 4px 8px; border-radius: 4px;">node src/main.js</code>
+              </p>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    function renderChart(data) {
+      const { candles, trades, indicators, metrics, config } = data;
+      const returnClass = parseFloat(metrics.totalReturn) >= 0 ? 'positive' : 'negative';
+      const winRateClass = parseFloat(metrics.winRate) >= 50 ? 'positive' : 'negative';
+
+      document.getElementById('app').innerHTML = `
+        <div class="header">
+          <h1>📈 ${config.strategy.name} | ${config.backtesting.symbol}</h1>
+          <div class="stats">
+            <div class="stat">
+              <span class="stat-label">Retorno</span>
+              <span class="stat-value ${returnClass}">${metrics.totalReturn}</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Win Rate</span>
+              <span class="stat-value ${winRateClass}">${metrics.winRate}</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Trades</span>
+              <span class="stat-value">${metrics.totalTrades}</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Profit Factor</span>
+              <span class="stat-value">${metrics.profitFactor}</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Max DD</span>
+              <span class="stat-value negative">${metrics.maxDrawdown}</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Buy & Hold</span>
+              <span class="stat-value positive">${metrics.buyHoldReturn}</span>
+            </div>
+          </div>
+        </div>
+        <div id="main-chart"></div>
+        <div class="rsi-label">RSI (14) - Oversold: 30 | Overbought: 70</div>
+        <div id="rsi-chart"></div>
+        <div class="indicators-panel">
+          <div class="indicator-value"><span class="indicator-label">RSI:</span> <span id="rsi-value">-</span></div>
+          <div class="indicator-value"><span class="indicator-label">ADX:</span> <span id="adx-value">-</span></div>
+          <div class="indicator-value"><span class="indicator-label">BB Upper:</span> <span id="bb-upper-value">-</span></div>
+          <div class="indicator-value"><span class="indicator-label">BB Lower:</span> <span id="bb-lower-value">-</span></div>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-color buy"></div> Long / Profit</div>
+          <div class="legend-item"><div class="legend-color sell"></div> Short / Loss</div>
+          <div class="legend-item"><div class="legend-color bb"></div> Bollinger Bands</div>
+          <div class="legend-item" style="color: #787b86; font-size: 11px;">
+            Mostrando últimos 50 trades significativos (>0.5% return)
+          </div>
+        </div>
+      `;
+
+      // Main Chart
+      const mainContainer = document.getElementById('main-chart');
+      const mainChart = LightweightCharts.createChart(mainContainer, {
+        width: mainContainer.clientWidth,
+        height: mainContainer.clientHeight,
+        layout: { background: { type: 'solid', color: '#131722' }, textColor: '#d1d4dc' },
+        grid: { vertLines: { color: '#1e222d' }, horzLines: { color: '#1e222d' } },
+        crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+        rightPriceScale: { borderColor: '#2a2e39' },
+        timeScale: { borderColor: '#2a2e39', timeVisible: true },
+      });
+
+      // Candlestick
+      const candleSeries = mainChart.addCandlestickSeries({
+        upColor: '#26a69a', downColor: '#ef5350',
+        borderUpColor: '#26a69a', borderDownColor: '#ef5350',
+        wickUpColor: '#26a69a', wickDownColor: '#ef5350',
+      });
+      candleSeries.setData(candles.map(c => ({
+        time: c.time, open: c.open, high: c.high, low: c.low, close: c.close
+      })));
+
+      // Bollinger Bands
+      if (indicators.bollingerUpper?.length > 0) {
+        const bbUpper = mainChart.addLineSeries({ color: '#2962ff', lineWidth: 1, lineStyle: 2 });
+        const bbMiddle = mainChart.addLineSeries({ color: '#2962ff', lineWidth: 1 });
+        const bbLower = mainChart.addLineSeries({ color: '#2962ff', lineWidth: 1, lineStyle: 2 });
+
+        bbUpper.setData(indicators.bollingerUpper.filter(d => d.value !== null));
+        bbMiddle.setData(indicators.bollingerMiddle.filter(d => d.value !== null));
+        bbLower.setData(indicators.bollingerLower.filter(d => d.value !== null));
+      }
+
+      // Supertrend
+      if (indicators.supertrend?.length > 0) {
+        const stUp = mainChart.addLineSeries({ color: '#26a69a', lineWidth: 2 });
+        const stDown = mainChart.addLineSeries({ color: '#ef5350', lineWidth: 2 });
+
+        const upData = [], downData = [];
+        indicators.supertrend.forEach(d => {
+          if (d.value !== null) {
+            (d.trend === 1 ? upData : downData).push({ time: d.time, value: d.value });
+          }
+        });
+        if (upData.length) stUp.setData(upData);
+        if (downData.length) stDown.setData(downData);
+      }
+
+      // Trade Markers - Solo mostrar trades significativos para no saturar
+      if (trades?.length > 0) {
+        // Filtrar solo trades con profit/loss significativo (> 0.5%)
+        const significantTrades = trades.filter(t => {
+          const returnPct = Math.abs(parseFloat(t.return));
+          return returnPct > 0.5;
+        });
+
+        // Limitar a máximo 50 markers para claridad
+        const tradesToShow = significantTrades.slice(-50);
+
+        const markers = [];
+        tradesToShow.forEach(t => {
+          if (t.entryTime) {
+            const isProfit = parseFloat(t.profit) > 0;
+            markers.push({
+              time: t.entryTime,
+              position: t.type === 'LONG' ? 'belowBar' : 'aboveBar',
+              color: t.type === 'LONG' ? '#26a69a' : '#ef5350',
+              shape: t.type === 'LONG' ? 'arrowUp' : 'arrowDown',
+              text: '',
+            });
+          }
+          if (t.exitTime) {
+            const isProfit = parseFloat(t.profit) > 0;
+            markers.push({
+              time: t.exitTime,
+              position: t.type === 'LONG' ? 'aboveBar' : 'belowBar',
+              color: isProfit ? '#26a69a' : '#ef5350',
+              shape: 'circle',
+              text: '',
+            });
+          }
+        });
+        markers.sort((a, b) => a.time - b.time);
+        candleSeries.setMarkers(markers);
+
+        // Agregar líneas de trades (conectando entry con exit)
+        tradesToShow.forEach(t => {
+          if (t.entryTime && t.exitTime) {
+            const isProfit = parseFloat(t.profit) > 0;
+            const tradeLine = mainChart.addLineSeries({
+              color: isProfit ? 'rgba(38, 166, 154, 0.5)' : 'rgba(239, 83, 80, 0.5)',
+              lineWidth: 2,
+              lineStyle: 0,
+              crosshairMarkerVisible: false,
+              lastValueVisible: false,
+              priceLineVisible: false,
+            });
+            tradeLine.setData([
+              { time: t.entryTime, value: t.entryPrice },
+              { time: t.exitTime, value: t.exitPrice }
+            ]);
+          }
+        });
+      }
+
+      // RSI Chart
+      const rsiContainer = document.getElementById('rsi-chart');
+      const rsiChart = LightweightCharts.createChart(rsiContainer, {
+        width: rsiContainer.clientWidth,
+        height: rsiContainer.clientHeight,
+        layout: { background: { type: 'solid', color: '#131722' }, textColor: '#d1d4dc' },
+        grid: { vertLines: { color: '#1e222d' }, horzLines: { color: '#1e222d' } },
+        rightPriceScale: { borderColor: '#2a2e39', scaleMargins: { top: 0.1, bottom: 0.1 } },
+        timeScale: { borderColor: '#2a2e39', visible: false },
+        crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+      });
+
+      if (indicators.rsi?.length > 0) {
+        const rsiSeries = rsiChart.addLineSeries({ color: '#f4c430', lineWidth: 2 });
+        const rsiData = indicators.rsi.filter(d => d.value !== null);
+        rsiSeries.setData(rsiData);
+
+        // RSI levels (30, 70)
+        const rsi30 = rsiChart.addLineSeries({ color: '#26a69a', lineWidth: 1, lineStyle: 2 });
+        const rsi70 = rsiChart.addLineSeries({ color: '#ef5350', lineWidth: 1, lineStyle: 2 });
+        rsi30.setData(rsiData.map(d => ({ time: d.time, value: 30 })));
+        rsi70.setData(rsiData.map(d => ({ time: d.time, value: 70 })));
+      }
+
+      // Sync time scales
+      mainChart.timeScale().subscribeVisibleLogicalRangeChange(range => {
+        if (range) rsiChart.timeScale().setVisibleLogicalRange(range);
+      });
+      rsiChart.timeScale().subscribeVisibleLogicalRangeChange(range => {
+        if (range) mainChart.timeScale().setVisibleLogicalRange(range);
+      });
+
+      // Crosshair sync
+      mainChart.subscribeCrosshairMove(param => {
+        if (param.time) {
+          const rsi = indicators.rsi?.find(d => d.time === param.time);
+          const adx = indicators.adx?.find(d => d.time === param.time);
+          const bbU = indicators.bollingerUpper?.find(d => d.time === param.time);
+          const bbL = indicators.bollingerLower?.find(d => d.time === param.time);
+
+          document.getElementById('rsi-value').textContent = rsi?.value?.toFixed(2) || '-';
+          document.getElementById('adx-value').textContent = adx?.value?.toFixed(2) || '-';
+          document.getElementById('bb-upper-value').textContent = bbU?.value?.toFixed(0) || '-';
+          document.getElementById('bb-lower-value').textContent = bbL?.value?.toFixed(0) || '-';
+        }
+      });
+
+      // Resize
+      window.addEventListener('resize', () => {
+        mainChart.applyOptions({ width: mainContainer.clientWidth });
+        rsiChart.applyOptions({ width: rsiContainer.clientWidth });
+      });
+
+      mainChart.timeScale().fitContent();
+      rsiChart.timeScale().fitContent();
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
