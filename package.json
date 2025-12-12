@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
+    "@neural-trader/core": "file:packages/neural-trader-core-2.0.0",
+    "@neural-trader/predictor": "file:packages/neural-trader-predictor-0.1.0",
     "neural-trader": "^2.3.11"
   }
 }
